@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: pitstop_db
+    environment:
+      POSTGRES_USER: pitstop
+      POSTGRES_PASSWORD: pitstop_dev
+      POSTGRES_DB: pitstop
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pitstop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pitstop_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: pitstop_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=pitstop
+      - POSTGRES_PASSWORD=pitstop_dev
+      - POSTGRES_DB=pitstop
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  celery_worker:
+    build: ./backend
+    container_name: pitstop_celery
+    command: celery -A app.tasks.celery_app worker --loglevel=info
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=pitstop
+      - POSTGRES_PASSWORD=pitstop_dev
+      - POSTGRES_DB=pitstop
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+
+volumes:
+  postgres_data:
+  redis_data:
