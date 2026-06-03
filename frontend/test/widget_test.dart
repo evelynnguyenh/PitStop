@@ -73,7 +73,7 @@ void main() {
     expect(find.byKey(const Key('onboarding-map-background')), findsOneWidget);
   });
 
-  testWidgets('renders first onboarding row, then reveals rows on tap', (
+  testWidgets('reveals onboarding rows on tap', (
     WidgetTester tester,
   ) async {
     setTestSurface(tester, const Size(378, 819));
@@ -86,23 +86,30 @@ void main() {
 
     expect(find.byKey(const Key('onboarding-map-background')), findsOneWidget);
     expect(find.byKey(const Key('onboarding-pitstop-logo')), findsOneWidget);
+    expect(find.text('Drop a review'), findsNothing);
+    expect(find.text('Watch it pin'), findsNothing);
+    expect(find.byKey(const Key('feature-label-roll')), findsNothing);
+
+    await tester.tap(find.byType(OnboardingMapScreen));
+    await tester.pumpAndSettle();
+
     expect(find.text('Drop a review'), findsOneWidget);
     expect(find.text('Watch it pin'), findsNothing);
-    expect(find.text('Roll your next stop 🎲'), findsNothing);
+    expect(find.byKey(const Key('feature-label-roll')), findsNothing);
 
     await tester.tap(find.byType(OnboardingMapScreen));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Drop a review'), findsOneWidget);
     expect(find.text('Watch it pin'), findsOneWidget);
-    expect(find.text('Roll your next stop 🎲'), findsNothing);
+    expect(find.byKey(const Key('feature-label-roll')), findsNothing);
 
     await tester.tap(find.byType(OnboardingMapScreen));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('Drop a review'), findsOneWidget);
     expect(find.text('Watch it pin'), findsOneWidget);
-    expect(find.text('Roll your next stop 🎲'), findsOneWidget);
+    expect(find.byKey(const Key('feature-label-roll')), findsOneWidget);
   });
 
   testWidgets('positions visible onboarding rows at the reference size', (
@@ -116,9 +123,11 @@ void main() {
       ),
     );
     await tester.tap(find.byType(OnboardingMapScreen));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(OnboardingMapScreen));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(OnboardingMapScreen));
+    await tester.pumpAndSettle();
 
     final logoRect = tester.getRect(
       find.byKey(const Key('onboarding-pitstop-logo')),
@@ -129,7 +138,7 @@ void main() {
     );
     final rollPinRect = tester.getRect(find.byKey(const Key('map-pin-roll')));
 
-    expect(logoRect.top, 170);
+    expect(logoRect.top, 160);
     expect(dropPinRect.size, const Size(45, 45));
     expect(dropPinRect.top, 301);
     expect(watchPinRect.top, 424);
@@ -157,7 +166,7 @@ void main() {
 
     expect(find.text('Drop a review'), findsOneWidget);
     expect(find.text('Watch it pin'), findsOneWidget);
-    expect(find.text('Roll your next stop 🎲'), findsOneWidget);
+    expect(find.byKey(const Key('feature-label-roll')), findsOneWidget);
     expect(finished, isFalse);
 
     await tester.pump(const Duration(milliseconds: 350));
@@ -175,9 +184,11 @@ void main() {
       ),
     );
     await tester.tap(find.byType(OnboardingMapScreen));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(OnboardingMapScreen));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(OnboardingMapScreen));
+    await tester.pumpAndSettle();
 
     final dropPinRect = tester.getRect(find.byKey(const Key('map-pin-drop')));
     final rollLabelRect = tester.getRect(

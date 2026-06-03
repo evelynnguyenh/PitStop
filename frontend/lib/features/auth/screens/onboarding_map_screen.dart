@@ -19,7 +19,7 @@ class OnboardingMapScreen extends StatefulWidget {
 class _OnboardingMapScreenState extends State<OnboardingMapScreen> {
   static const _finishDelay = Duration(milliseconds: 350);
 
-  int _visibleRows = 1;
+  int _visibleRows = 0;
   bool _finishing = false;
 
   void _handleTap() {
@@ -226,6 +226,9 @@ class _PinFeatureRow extends StatelessWidget {
     this.pinAfterText = false,
   });
 
+  static const _animationDuration = Duration(milliseconds: 460);
+  static const _slideDistance = 18.0;
+
   final bool visible;
   final double top;
   final double left;
@@ -264,12 +267,27 @@ class _PinFeatureRow extends StatelessWidget {
     return Positioned(
       top: top,
       left: left,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: pinAfterText
-            ? [label, const SizedBox(width: 9), pin]
-            : [pin, const SizedBox(width: 8), label],
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: _animationDuration,
+        curve: Curves.easeOutCubic,
+        builder: (context, value, child) {
+          final direction = pinAfterText ? 1 : -1;
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset((1 - value) * _slideDistance * direction, 0),
+              child: child,
+            ),
+          );
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: pinAfterText
+              ? [label, const SizedBox(width: 9), pin]
+              : [pin, const SizedBox(width: 8), label],
+        ),
       ),
     );
   }
