@@ -19,7 +19,6 @@ dependencies:
   
   # Networking
   dio: ^5.4.0
-  retrofit: ^4.0.3
   json_annotation: ^4.8.1
   
   # Local Storage
@@ -70,7 +69,6 @@ dev_dependencies:
   build_runner: ^2.4.7
   riverpod_generator: ^2.3.6
   json_serializable: ^6.7.1
-  retrofit_generator: ^8.0.4
   freezed: ^2.4.6
 
   # Testing

@@ -1,9 +1,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import 'onboarding_map_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, this.autoAdvance = true});
@@ -30,11 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
         return;
       }
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => const OnboardingMapScreen(),
-        ),
-      );
+      context.go('/onboarding');
     });
   }
 
