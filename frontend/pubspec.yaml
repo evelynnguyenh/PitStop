@@ -23,8 +23,6 @@ dependencies:
   json_annotation: ^4.8.1
   
   # Local Storage
-  isar: ^3.1.0
-  isar_flutter_libs: ^3.1.0
   flutter_secure_storage: ^10.0.0
   shared_preferences: ^2.2.2
   
@@ -74,8 +72,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   retrofit_generator: ^8.0.4
   freezed: ^2.4.6
-  isar_generator: ^3.1.0
-  
+
   # Testing
   mockito: ^5.4.4
   integration_test:
@@ -83,7 +80,16 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/images/
     - assets/icons/
+    - assets/font/
+
+  fonts:
+    - family: HoltwoodOneSC
+      fonts:
+        - asset: assets/font/HoltwoodOneSC-Regular.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/font/Inter.ttf
