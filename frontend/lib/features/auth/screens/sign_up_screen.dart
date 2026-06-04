@@ -26,8 +26,15 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(
+      () => ref.read(authNotifierProvider.notifier).clearError(),
+    );
     ref.listenManual(authNotifierProvider, (_, next) {
       if (!mounted) return;
+      if (next is AsyncData && next.value is AuthStateUnauthenticated) {
+        context.go('/login');
+        return;
+      }
       final authState = next.valueOrNull;
       if (authState is AuthStateAuthenticated) {
         if (authState.user.isNewUser) {
@@ -41,6 +48,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   void _onSignUp() {
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
+    ref.read(authNotifierProvider.notifier).clearError();
     final values = _formKey.currentState!.value;
     ref.read(authNotifierProvider.notifier).signUpWithEmail(
           email: widget.email,
@@ -49,7 +57,8 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   String? _confirmPasswordValidator(String? value) {
-    final password = _formKey.currentState?.fields['password']?.value as String?;
+    final password =
+        _formKey.currentState?.fields['password']?.value as String?;
     if (value == null || value.isEmpty) return 'Vui lòng xác nhận mật khẩu';
     if (value != password) return 'Mật khẩu không khớp';
     return null;
@@ -111,8 +120,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               obscureText: true,
               textInputAction: TextInputAction.next,
               validator: FormBuilderValidators.compose([
-                FormBuilderValidators.required(errorText: 'Vui lòng nhập mật khẩu'),
-                FormBuilderValidators.minLength(8, errorText: 'Mật khẩu tối thiểu 8 ký tự'),
+                FormBuilderValidators.required(
+                  errorText: 'Vui lòng nhập mật khẩu',
+                ),
+                FormBuilderValidators.minLength(
+                  8,
+                  errorText: 'Mật khẩu tối thiểu 8 ký tự',
+                ),
               ]),
             ),
             const SizedBox(height: 12),
@@ -158,10 +172,18 @@ class _LoginLink extends StatelessWidget {
       children: [
         const Text(
           'Đã có tài khoản? ',
-          style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF888888)),
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 14,
+            color: Color(0xFF888888),
+          ),
         ),
         GestureDetector(
-          onTap: () => context.go('/login'),
+          onTap: () {
+            final container = ProviderScope.containerOf(context);
+            container.read(authNotifierProvider.notifier).clearError();
+            context.go('/login');
+          },
           child: const Text(
             'Đăng nhập',
             style: TextStyle(

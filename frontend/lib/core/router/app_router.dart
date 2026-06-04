@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/auth/providers/auth_notifier.dart';
 import '../../features/auth/providers/auth_state.dart';
@@ -31,8 +32,15 @@ GoRouter appRouter(AppRouterRef ref, bool autoAdvanceSplash) {
       ),
       GoRoute(
         path: '/onboarding',
-        builder: (context, state) =>
-            OnboardingMapScreen(onFinished: () => context.go('/auth')),
+        builder: (context, state) => OnboardingMapScreen(
+          onFinished: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool(SplashScreen.hasSeenOnboardingKey, true);
+            if (context.mounted) {
+              context.go('/auth');
+            }
+          },
+        ),
       ),
       GoRoute(
         path: '/auth',
@@ -55,8 +63,7 @@ GoRouter appRouter(AppRouterRef ref, bool autoAdvanceSplash) {
       ),
       GoRoute(
         path: '/personalize',
-        builder: (context, state) =>
-            const _PlaceholderScreen('Personalize'),
+        builder: (context, state) => const _PlaceholderScreen('Personalize'),
       ),
       GoRoute(
         path: '/home',

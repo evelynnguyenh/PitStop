@@ -2,12 +2,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, this.autoAdvance = true});
 
+  static const hasSeenOnboardingKey = 'has_seen_onboarding';
   static const referenceSize = Size(378, 819);
   static const transitionDelay = Duration(seconds: 2);
 
@@ -25,12 +27,19 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    Future<void>.delayed(SplashScreen.transitionDelay, () {
+    Future<void>.delayed(SplashScreen.transitionDelay, () async {
       if (!mounted) {
         return;
       }
 
-      context.go('/onboarding');
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) {
+        return;
+      }
+
+      final hasSeenOnboarding =
+          prefs.getBool(SplashScreen.hasSeenOnboardingKey) ?? false;
+      context.go(hasSeenOnboarding ? '/auth' : '/onboarding');
     });
   }
 

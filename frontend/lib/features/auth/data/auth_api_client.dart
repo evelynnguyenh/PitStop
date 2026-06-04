@@ -5,7 +5,6 @@ import '../../../core/network/dio_client.dart';
 import 'models/auth_request.dart';
 import 'models/auth_response.dart';
 
-
 part 'auth_api_client.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -56,5 +55,12 @@ class AuthApiClient {
       data: body.toJson(),
     );
     return AuthResponse.fromJson(response.data!);
+  }
+
+  Future<void> forgotPassword(ForgotPasswordRequest body) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/auth/forgot-password',
+      data: body.toJson(),
+    );
   }
 }

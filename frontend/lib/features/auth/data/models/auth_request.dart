@@ -57,3 +57,12 @@ class RefreshRequest {
 
   Map<String, dynamic> toJson() => _$RefreshRequestToJson(this);
 }
+
+@JsonSerializable(createFactory: false)
+class ForgotPasswordRequest {
+  const ForgotPasswordRequest({required this.email});
+
+  final String email;
+
+  Map<String, dynamic> toJson() => _$ForgotPasswordRequestToJson(this);
+}

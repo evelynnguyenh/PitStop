@@ -26,6 +26,9 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(
+      () => ref.read(authNotifierProvider.notifier).clearError(),
+    );
     ref.listenManual(authNotifierProvider, (_, next) {
       if (!mounted) return;
       final authState = next.valueOrNull;
@@ -45,6 +48,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
 
   void _onContinue() {
     if (_formKey.currentState?.saveAndValidate() ?? false) {
+      ref.read(authNotifierProvider.notifier).clearError();
       final email = _formKey.currentState!.value['email'] as String;
       context.push('/auth/signup', extra: email);
     }
@@ -180,8 +184,9 @@ class _EmailField extends StatelessWidget {
 class _LoginLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         const Text(
           'Đã có tài khoản? ',
@@ -192,7 +197,11 @@ class _LoginLink extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => context.go('/login'),
+          onTap: () {
+            final container = ProviderScope.containerOf(context);
+            container.read(authNotifierProvider.notifier).clearError();
+            context.go('/login');
+          },
           child: const Text(
             'Đăng nhập',
             style: TextStyle(

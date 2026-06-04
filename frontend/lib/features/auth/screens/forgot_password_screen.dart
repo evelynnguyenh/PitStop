@@ -5,6 +5,8 @@ import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../data/auth_api_client.dart';
+import '../data/models/auth_request.dart';
 import '../widgets/auth_card_scaffold.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/pitstop_logo.dart';
@@ -22,19 +24,32 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   bool _isLoading = false;
   bool _submitted = false;
+  String? _errorMessage;
 
   Future<void> _onSubmit() async {
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
-    setState(() => _isLoading = true);
-
-    // TODO(backend): call POST /auth/forgot-password when backend is live
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-
-    if (!mounted) return;
+    final email = _formKey.currentState!.value['email'] as String;
     setState(() {
-      _isLoading = false;
-      _submitted = true;
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      await ref
+          .read(authApiClientProvider)
+          .forgotPassword(ForgotPasswordRequest(email: email));
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _submitted = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Lỗi hệ thống, vui lòng thử lại';
+      });
+    }
   }
 
   @override
@@ -70,6 +85,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           if (_submitted) ...[
             _SuccessMessage(),
           ] else ...[
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13,
+                  color: AppColors.red,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             FormBuilder(
               key: _formKey,
               child: AuthTextField(
@@ -78,8 +105,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
                 validator: FormBuilderValidators.compose([
-                  FormBuilderValidators.required(errorText: 'Vui lòng nhập email'),
-                  FormBuilderValidators.email(errorText: 'Email không hợp lệ'),
+                  FormBuilderValidators.required(
+                    errorText: 'Vui lòng nhập email',
+                  ),
+                  FormBuilderValidators.email(
+                    errorText: 'Email không hợp lệ',
+                  ),
                 ]),
               ),
             ),
@@ -128,7 +159,11 @@ class _BackToLoginLink extends StatelessWidget {
       children: [
         const Text(
           'Quay lại ',
-          style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF888888)),
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 14,
+            color: Color(0xFF888888),
+          ),
         ),
         GestureDetector(
           onTap: () => context.pop(),

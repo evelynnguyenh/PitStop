@@ -37,6 +37,7 @@ instance/
 .venv
 venv/
 ENV/
+frontend/.env.dev
 
 # Database
 *.db

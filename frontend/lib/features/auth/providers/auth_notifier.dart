@@ -1,13 +1,18 @@
+import 'package:dio/dio.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/storage/secure_storage_service.dart';
-import '../data/models/auth_response.dart';
+import '../data/auth_api_client.dart';
+import '../data/models/auth_request.dart';
 import 'auth_state.dart';
 
 part 'auth_notifier.g.dart';
 
 @riverpod
 class AuthNotifier extends _$AuthNotifier {
+  static Future<void>? _googleInitialization;
+
   late SecureStorageService _storage;
 
   @override
@@ -15,11 +20,19 @@ class AuthNotifier extends _$AuthNotifier {
     _storage = ref.read(secureStorageServiceProvider);
 
     try {
-      final token = await _storage.getAccessToken();
-      if (token == null) return const AuthState.unauthenticated();
-      // TODO(backend): attempt silent token refresh via POST /auth/refresh when backend is live
-      return const AuthState.unauthenticated();
+      final refreshToken = await _storage.getRefreshToken();
+      if (refreshToken == null) return const AuthState.unauthenticated();
+
+      final response = await ref
+          .read(authApiClientProvider)
+          .refreshToken(RefreshRequest(refreshToken: refreshToken));
+      await _storage.saveTokens(
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+      );
+      return AuthState.authenticated(user: response);
     } catch (_) {
+      await _storage.clearAll();
       return const AuthState.unauthenticated();
     }
   }
@@ -30,23 +43,17 @@ class AuthNotifier extends _$AuthNotifier {
   }) async {
     state = const AsyncLoading();
     try {
-      // TODO(backend): replace mock when POST /auth/register is live
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-      final response = AuthResponse(
-        accessToken: 'mock_access_token',
-        refreshToken: 'mock_refresh_token',
-        userId: 'mock_user_id',
-        email: email,
-        isNewUser: true,
-      );
-      // final response = await ref.read(authApiClientProvider).register(RegisterRequest(email: email, password: password));
-      await _storage.saveTokens(
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      );
-      state = AsyncData(AuthState.authenticated(user: response));
+      await ref.read(authApiClientProvider).register(
+            RegisterRequest(email: email, password: password),
+          );
+      await _storage.clearAll();
+      state = const AsyncData(AuthState.unauthenticated());
+    } on DioException catch (error) {
+      state = AsyncData(AuthState.error(message: _emailAuthMessage(error)));
     } catch (_) {
-      state = const AsyncData(AuthState.error(message: 'Lỗi hệ thống, vui lòng thử lại'));
+      state = const AsyncData(
+        AuthState.error(message: 'Lỗi hệ thống, vui lòng thử lại'),
+      );
     }
   }
 
@@ -56,89 +63,131 @@ class AuthNotifier extends _$AuthNotifier {
   }) async {
     state = const AsyncLoading();
     try {
-      // TODO(backend): replace mock when POST /auth/login is live
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-      final response = AuthResponse(
-        accessToken: 'mock_access_token',
-        refreshToken: 'mock_refresh_token',
-        userId: 'mock_user_id',
-        email: email,
-        isNewUser: false,
-      );
-      // final response = await ref.read(authApiClientProvider).login(LoginRequest(email: email, password: password));
+      final response = await ref.read(authApiClientProvider).login(
+            LoginRequest(email: email, password: password),
+          );
       await _storage.saveTokens(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
       );
       state = AsyncData(AuthState.authenticated(user: response));
+    } on DioException catch (error) {
+      state = AsyncData(AuthState.error(message: _emailAuthMessage(error)));
     } catch (_) {
-      state = const AsyncData(AuthState.error(message: 'Lỗi hệ thống, vui lòng thử lại'));
+      state = const AsyncData(
+        AuthState.error(message: 'Lỗi hệ thống, vui lòng thử lại'),
+      );
     }
   }
 
   Future<void> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      // TODO(backend): replace mock when POST /auth/google is live
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-      const response = AuthResponse(
-        accessToken: 'mock_access_token',
-        refreshToken: 'mock_refresh_token',
-        userId: 'mock_google_user_id',
-        email: 'mock@google.com',
-        isNewUser: false,
-      );
-      // final account = await GoogleSignIn(scopes: []).signIn();
-      // if (account == null) { state = AsyncData(AuthState.unauthenticated()); return; }
-      // final auth = await account.authentication;
-      // final response = await ref.read(authApiClientProvider).googleSignIn(GoogleAuthRequest(idToken: auth.idToken!));
+      await _ensureGoogleInitialized();
+      final account = await GoogleSignIn.instance.authenticate();
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        state = const AsyncData(
+          AuthState.error(message: 'Google không trả về mã đăng nhập'),
+        );
+        return;
+      }
+
+      final response = await ref
+          .read(authApiClientProvider)
+          .googleSignIn(GoogleAuthRequest(idToken: idToken));
       await _storage.saveTokens(
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
       );
-      state = const AsyncData(AuthState.authenticated(user: response));
+      state = AsyncData(AuthState.authenticated(user: response));
+    } on GoogleSignInException catch (error) {
+      if (error.code == GoogleSignInExceptionCode.canceled ||
+          error.code == GoogleSignInExceptionCode.interrupted ||
+          error.code == GoogleSignInExceptionCode.uiUnavailable) {
+        state = const AsyncData(AuthState.unauthenticated());
+        return;
+      }
+      state = const AsyncData(
+        AuthState.error(message: 'Google chưa được cấu hình đúng'),
+      );
+    } on DioException catch (error) {
+      state = AsyncData(AuthState.error(message: _googleBackendMessage(error)));
     } catch (_) {
-      state = const AsyncData(AuthState.error(message: 'Đăng nhập Google thất bại, thử lại'));
+      state = const AsyncData(
+        AuthState.error(message: 'Đăng nhập Google thất bại, thử lại'),
+      );
     }
   }
 
   Future<void> signInWithApple() async {
-    state = const AsyncLoading();
-    try {
-      // TODO(backend): replace mock when POST /auth/apple is live
-      await Future<void>.delayed(const Duration(milliseconds: 800));
-      const response = AuthResponse(
-        accessToken: 'mock_access_token',
-        refreshToken: 'mock_refresh_token',
-        userId: 'mock_apple_user_id',
-        email: 'mock@apple.com',
-        isNewUser: false,
-      );
-      // final credential = await SignInWithApple.getAppleIDCredential(
-      //   scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
-      // );
-      // final response = await ref.read(authApiClientProvider).appleSignIn(AppleAuthRequest(
-      //   identityToken: credential.identityToken!,
-      //   authorizationCode: credential.authorizationCode,
-      // ));
-      await _storage.saveTokens(
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-      );
-      state = const AsyncData(AuthState.authenticated(user: response));
-    } catch (_) {
-      state = const AsyncData(AuthState.error(message: 'Đăng nhập Apple thất bại, thử lại'));
-    }
+    state = const AsyncData(
+      AuthState.error(message: 'Đăng nhập Apple chưa được hỗ trợ'),
+    );
   }
 
   Future<void> logout() async {
     state = const AsyncLoading();
     try {
       await _storage.clearAll();
-      // TODO(backend): GoogleSignIn(scopes: []).signOut() when sign-in is wired up
+      await _ensureGoogleInitialized();
+      await GoogleSignIn.instance.signOut();
     } catch (_) {
-      // silently clear state regardless of errors
+      // Keep logout local even if Google sign-out fails.
     }
     state = const AsyncData(AuthState.unauthenticated());
+  }
+
+  void clearError() {
+    if (state.valueOrNull is AuthStateError) {
+      state = const AsyncData(AuthState.unauthenticated());
+    }
+  }
+
+  Future<void> _ensureGoogleInitialized() {
+    final clientId = const String.fromEnvironment('GOOGLE_CLIENT_ID');
+    final serverClientId =
+        const String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+    return _googleInitialization ??= GoogleSignIn.instance.initialize(
+      clientId: clientId.isEmpty ? null : clientId,
+      serverClientId: serverClientId.isEmpty ? null : serverClientId,
+    );
+  }
+
+  String _emailAuthMessage(DioException error) {
+    if (_isConnectionError(error)) {
+      return 'Không kết nối được máy chủ';
+    }
+
+    switch (error.response?.statusCode) {
+      case 401:
+        return 'Email hoặc mật khẩu không đúng';
+      case 409:
+        return 'Email này đã được đăng ký';
+      case 422:
+        return 'Thông tin đăng nhập không hợp lệ';
+      default:
+        return 'Lỗi hệ thống, vui lòng thử lại';
+    }
+  }
+
+  String _googleBackendMessage(DioException error) {
+    if (_isConnectionError(error)) {
+      return 'Không kết nối được máy chủ';
+    }
+    if (error.response?.statusCode == 503) {
+      return 'Google chưa được cấu hình trên backend';
+    }
+    if (error.response?.statusCode == 401) {
+      return 'Mã đăng nhập Google không hợp lệ';
+    }
+    return 'Đăng nhập Google thất bại, thử lại';
+  }
+
+  bool _isConnectionError(DioException error) {
+    return error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.sendTimeout;
   }
 }

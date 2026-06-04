@@ -24,14 +24,20 @@ class AuthCardScaffold extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: LayoutBuilder(
-                builder: (context, innerConstraints) => SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: innerConstraints.maxHeight,
+                builder: (context, innerConstraints) => ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(
+                    context,
+                  ).copyWith(overscroll: false),
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: innerConstraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(child: child),
                     ),
-                    child: IntrinsicHeight(child: child),
                   ),
                 ),
               ),

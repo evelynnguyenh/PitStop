@@ -27,6 +27,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(
+      () => ref.read(authNotifierProvider.notifier).clearError(),
+    );
     ref.listenManual(authNotifierProvider, (_, next) {
       if (!mounted) return;
       final authState = next.valueOrNull;
@@ -42,6 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _onLogin() {
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) return;
+    ref.read(authNotifierProvider.notifier).clearError();
     final values = _formKey.currentState!.value;
     ref.read(authNotifierProvider.notifier).loginWithEmail(
           email: values['email'] as String,
@@ -131,7 +135,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Align(
               alignment: Alignment.centerRight,
               child: GestureDetector(
-                onTap: () => context.push('/forgot-password'),
+                onTap: () {
+                  ref.read(authNotifierProvider.notifier).clearError();
+                  context.push('/forgot-password');
+                },
                 child: const Text(
                   'Quên mật khẩu?',
                   style: TextStyle(
@@ -187,7 +194,11 @@ class _RegisterLink extends StatelessWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => context.go('/auth'),
+          onTap: () {
+            final container = ProviderScope.containerOf(context);
+            container.read(authNotifierProvider.notifier).clearError();
+            context.go('/auth');
+          },
           child: const Text(
             'Đăng ký',
             style: TextStyle(

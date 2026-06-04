@@ -5,8 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pitstop/features/auth/screens/onboarding_map_screen.dart';
 import 'package:pitstop/features/auth/screens/splash_screen.dart';
 import 'package:pitstop/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.resetStatic();
+    SharedPreferences.setMockInitialValues({});
+  });
+
   void setTestSurface(WidgetTester tester, Size size) {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
