@@ -87,3 +87,11 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+  
+  fonts:
+    - family: Holtwood
+      fonts:
+        - asset: assets/font/HoltwoodOneSC-Regular.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/font/Inter.ttf
