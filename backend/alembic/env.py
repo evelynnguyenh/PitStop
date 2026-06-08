@@ -13,7 +13,8 @@ from app.db.session import Base
 from app.core.config import settings
 
 # Import all models here for auto-generation
-# from app.models.user import User
+from app.models.user import PasswordResetToken, RefreshToken, User
+
 # from app.models.place import Place
 # from app.models.post import Post
 
@@ -25,7 +26,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Set SQLAlchemy URL from settings
-config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
+config.set_main_option("sqlalchemy.url", str(settings.SQLALCHEMY_DATABASE_URI))
 
 target_metadata = Base.metadata
 
@@ -53,10 +54,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
