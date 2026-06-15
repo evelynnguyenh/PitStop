@@ -12,6 +12,10 @@ import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/onboarding_map_screen.dart';
 import '../../features/auth/screens/sign_up_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
+import '../../features/random/random_screen.dart';
+import '../../features/random/random_choice_screen.dart';
+
+
 
 part 'app_router.g.dart';
 
@@ -21,7 +25,8 @@ GoRouter appRouter(AppRouterRef ref, bool autoAdvanceSplash) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/random', 
+    #change from /splash to /random for testing
     refreshListenable: notifier,
     redirect: notifier.redirect,
     routes: [
@@ -69,6 +74,10 @@ GoRouter appRouter(AppRouterRef ref, bool autoAdvanceSplash) {
         path: '/home',
         builder: (context, state) => const _PlaceholderScreen('Home'),
       ),
+      GoRoute(
+        path: '/random',
+        builder: (context, state) => const RandomChoiceScreen(),
+      ),
     ],
   );
 }
@@ -92,7 +101,9 @@ class _RouterNotifier extends ChangeNotifier {
         loc == '/login' ||
         loc == '/forgot-password';
 
-    if (isAuthenticated && isOnAuthRoute) return '/home';
+    if (isAuthenticated && isOnAuthRoute) {
+      return '/random';
+    }
     if (!isAuthenticated && (loc == '/home' || loc == '/personalize')) {
       return '/auth';
     }
