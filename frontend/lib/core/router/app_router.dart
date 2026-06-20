@@ -26,7 +26,7 @@ GoRouter appRouter(AppRouterRef ref, bool autoAdvanceSplash) {
 
   return GoRouter(
     initialLocation: '/random', 
-    #change from /splash to /random for testing
+    //change from /splash to /random for testing
     refreshListenable: notifier,
     redirect: notifier.redirect,
     routes: [
