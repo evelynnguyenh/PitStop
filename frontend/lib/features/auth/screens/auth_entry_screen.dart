@@ -42,7 +42,7 @@ class _AuthEntryScreenState extends ConsumerState<AuthEntryScreen> {
     if (state.user.isNewUser) {
       context.go('/personalize');
     } else {
-      context.go('/home');
+      context.go('/random');
     }
   }
 

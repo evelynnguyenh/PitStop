@@ -40,7 +40,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         if (authState.user.isNewUser) {
           context.go('/personalize');
         } else {
-          context.go('/home');
+          context.go('/random');
         }
       }
     });

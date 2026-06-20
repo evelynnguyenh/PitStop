@@ -15,8 +15,6 @@ import '../../features/auth/screens/splash_screen.dart';
 import '../../features/random/random_screen.dart';
 import '../../features/random/random_choice_screen.dart';
 
-
-
 part 'app_router.g.dart';
 
 @Riverpod(keepAlive: true)
@@ -25,7 +23,7 @@ GoRouter appRouter(AppRouterRef ref, bool autoAdvanceSplash) {
   ref.onDispose(notifier.dispose);
 
   return GoRouter(
-    initialLocation: '/random', 
+    initialLocation: '/splash',
     //change from /splash to /random for testing
     refreshListenable: notifier,
     redirect: notifier.redirect,
