@@ -11,9 +11,13 @@ app = FastAPI(
 )
 
 # CORS middleware
+# allow_origin_regex covers Flutter web dev servers, which bind to a different
+# port on every `flutter run`, so a fixed origin list in BACKEND_CORS_ORIGINS
+# can't keep up.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origin_regex=r"http://localhost(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,6 +43,7 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
